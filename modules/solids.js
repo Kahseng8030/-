@@ -1,0 +1,104 @@
+
+'use strict';
+const SOLID_LIBRARY=[
+  {id:'cube',name:'立方体',tag:'边长 a',dims:[{key:'a',label:'边长 a',min:2,max:12,step:.5,def:6}],area:'6a²',volume:'a³',desc:'六个面都是正方形，所有棱长相等。'},
+  {id:'cuboid',name:'长方体',tag:'长 l · 宽 w · 高 h',dims:[{key:'l',label:'长 l',min:2,max:14,step:.5,def:8},{key:'w',label:'宽 w',min:2,max:10,step:.5,def:5},{key:'h',label:'高 h',min:2,max:12,step:.5,def:6}],area:'2(lw + lh + wh)',volume:'lwh',desc:'三个方向长度可以不同的长方体。'},
+  {id:'pyramid',name:'棱锥体（正四棱锥）',tag:'底边 a · 高 h',dims:[{key:'a',label:'底边 a',min:2,max:12,step:.5,def:8},{key:'h',label:'高 h',min:2,max:12,step:.5,def:7}],area:'a² + 2a√((a/2)² + h²)',volume:'a²h / 3',desc:'这里以正四棱锥为例，顶点位于底面中心正上方。'},
+  {id:'cylinder',name:'圆柱体',tag:'半径 r · 高 h',dims:[{key:'r',label:'半径 r',min:2,max:10,step:.5,def:4.5},{key:'h',label:'高 h',min:2,max:14,step:.5,def:9}],area:'2πr(r+h)',volume:'πr²h',desc:'上下底面是全等圆，中间侧面展开是长方形。'},
+  {id:'cone',name:'圆锥体',tag:'半径 r · 高 h',dims:[{key:'r',label:'半径 r',min:2,max:10,step:.5,def:4.5},{key:'h',label:'高 h',min:2,max:14,step:.5,def:9}],area:'πr(r+√(r²+h²))',volume:'πr²h / 3',desc:'顶点到底面中心的虚线可以表示高。'},
+  {id:'sphere',name:'球体',tag:'半径 r',dims:[{key:'r',label:'半径 r',min:2,max:10,step:.5,def:5}],area:'4πr²',volume:'4πr³ / 3',desc:'从球心到球面任一点的距离相等。'},
+  {id:'hemisphere',name:'半球体',tag:'半径 r',dims:[{key:'r',label:'半径 r',min:2,max:10,step:.5,def:5}],area:'3πr²（含底面） / 2πr²（不含底面）',volume:'2πr³ / 3',desc:'半球体常见两种表面积写法：含底面或不含底面。'},
+  {id:'triangularPrism',name:'三棱柱',tag:'底边 b · 三角高 h · 棱长 L',dims:[{key:'b',label:'底边 b',min:2,max:12,step:.5,def:7},{key:'h',label:'三角高 h',min:2,max:10,step:.5,def:5},{key:'L',label:'棱长 L',min:2,max:12,step:.5,def:8}],area:'底面积×2 + 底面周长×L',volume:'(bh/2) × L',desc:'两端底面是全等三角形，中间由三个长方形侧面连接。'}
+];
+function solidsState(){
+  if(!state.solids)state.solids={selected:'cube',scene:[],active:null};
+  if(!Array.isArray(state.solids.scene))state.solids.scene=[];
+  if(!state.solids.selected)state.solids.selected='cube';
+  return state.solids;
+}
+function solidDef(id){return SOLID_LIBRARY.find(s=>s.id===id)||SOLID_LIBRARY[0]}
+function solidDefaultParams(id){const def=solidDef(id),p={};for(const d of def.dims)p[d.key]=d.def;return p}
+function solidsPage(){const S=solidsState(),def=solidDef(S.selected),active=S.scene.find(x=>x.id===S.active)||S.scene[0]||null;return `${head('3D SOLID STUDIO / 立体图形工作坊','3D 立体图形','查看常见立体图形、对应的表面积与体积公式；还可以把多个立体拖入同一舞台，自由组合出你想要的图形。','<span class="pill">8 种常见立体 + 组合舞台</span>')}
+<section class="tool-hero"><span class="eyebrow">SOLID FORGE / GEOMETRY WORKSHOP</span><h3>从平面公式，走进清晰可见的立体世界。</h3><p>每个图形都提供清晰示意图、表面积公式、体积公式。高、半径以及背后的隐藏边会尽量用虚线表示，帮助你看懂空间结构。</p></section>
+<div class="solids-layout">
+  <aside class="solids-panel library"><h3>立体图形分类</h3><p class="lab-subtitle">点击一种立体，右边会显示放大图与公式。</p>${SOLID_LIBRARY.map(item=>`<button class="solid-card ${item.id===S.selected?'active':''}" data-solid-pick="${item.id}"><b>${item.name}</b><small>${item.tag}</small></button>`).join('')}</aside>
+  <section class="solids-panel"><div class="solid-top"><div><span class="eyebrow">${esc(def.tag)}</span><h3>${esc(def.name)}</h3><p>${esc(def.desc)}</p></div><button class="lab-action primary" data-solid-add>＋ 加入组合舞台</button></div>
+    <div class="solid-preview-box">${solidPreview(def.id,solidDefaultParams(def.id),true)}</div>
+    <div class="solid-formula-grid"><div><span>表面积公式</span><strong>${esc(def.area)}</strong></div><div><span>体积公式</span><strong>${esc(def.volume)}</strong></div></div>
+    <div class="info-note">提示：虚线通常代表<strong>看不见的边</strong>、<strong>高</strong>、<strong>半径</strong>或位于立体后方的结构。</div>
+    <section class="net-panel" aria-label="平面展开图与展开动画">
+      <div class="net-heading"><div><span class="eyebrow">FOLD · UNFOLD / 几何探索</span><h3>🦋 平面展开图与动画</h3><p>观察各个面如何展开；拖动进度即可停在任意阶段。</p></div><span class="net-percentage" id="netPercent">100%</span></div>
+      <svg id="solidNet" class="solid-net-svg" viewBox="0 0 600 360" aria-label="${esc(def.name)}的平面展开示意图" role="img">${solidNetDraw(def.id,solidDefaultParams(def.id),solidNetProgress)}</svg>
+      <div class="net-controls"><button class="lab-action primary" data-net-play>▶ 播放展开动画</button><button class="lab-action" data-net-reset>↶ 折叠</button><button class="lab-action" data-net-full>全部展开</button></div>
+      <label class="net-slider-label"><span>折叠</span><input id="netSlider" type="range" min="0" max="100" value="${Math.round(solidNetProgress*100)}" aria-label="展开进度"><span>展开</span></label>
+      <p class="net-explain" id="netExplain">${esc(solidNetNote(def.id))}</p>
+      <p class="net-disclaimer">教学提示：多面体会沿公共棱折叠（立方体、长方体、正四棱锥、三棱柱）；圆柱与圆锥以立体及准确平面网过渡示意。球体与半球体不能无变形地精确展平。</p>
+    </section>
+  </section>
+</div>
+<div class="solids-layout stage-layout">
+  <section class="solids-panel"><div class="solid-top"><div><h3>自由组合舞台</h3><p>在 iPad 上直接用手指拖动立体；电脑使用鼠标拖动。可切换「拖动位置 / 旋转视角」，电脑和 iPad 都能用手势操作。</p></div><div class="lab-row"><button class="lab-action" data-solid-clear>清空舞台</button><button class="lab-action" data-solid-export>↓ 保存 PNG</button></div></div>
+    <div class="solid-rotation-bar"><button class="lab-action selected" data-solid-mode="move">✋ 移动图形</button><button class="lab-action" data-solid-mode="rotate">🔄 旋转图形</button><span class="solid-rot-pill" id="solidModeNote">当前：拖动移动</span></div><div class="solid-stage-wrap"><div class="stage-tip">👆 选择移动或旋转模式，再直接滑动图形</div><svg id="solidStage" class="solid-stage" viewBox="0 0 900 520" role="img" aria-label="3D 立体图形组合舞台"><rect x="0" y="0" width="900" height="520" fill="#0b251f"/><g id="solidStageContent">${solidStageSvg()}</g></svg></div>
+  </section>
+  <aside class="solids-panel builder"><h3>组合清单</h3><div id="solidSceneList">${solidSceneList(active)}</div><div id="solidEditor">${solidEditor(active)}</div></aside>
+</div>`}
+function solidSceneList(active){const S=solidsState();if(!S.scene.length)return `<div class="ga-empty">舞台还是空的。先在上方点击“加入组合舞台”。</div>`;return `<div class="scene-list">${S.scene.map((item,i)=>`<button class="scene-item ${active&&active.id===item.id?'active':''}" data-solid-focus="${item.id}"><div><b>${i+1}. ${solidDef(item.type).name}</b><small>x=${Math.round(item.x)} · y=${Math.round(item.y)} · 缩放=${item.scale.toFixed(1)}</small></div><span>编辑 →</span></button>`).join('')}</div>`}
+function solidEditor(active){if(!active)return '';const def=solidDef(active.type);return `<div class="solid-editor-box"><div class="step-top"><h4>编辑当前立体</h4><span class="step-bullet">${esc(def.name)}</span></div><div class="solid-editor-grid"><label><span>横向位置 X</span><input type="range" min="60" max="840" step="1" value="${esc(active.x)}" data-solid-edit="x"></label><label><span>纵向位置 Y</span><input type="range" min="80" max="460" step="1" value="${esc(active.y)}" data-solid-edit="y"></label><label><span>水平旋转角度（°）</span><input type="range" min="-180" max="180" step="1" value="${esc(active.yaw??38)}" data-solid-edit="yaw"><output>${Math.round(active.yaw??38)}°</output></label><label><span>俯仰角度（°）</span><input type="range" min="-85" max="85" step="1" value="${esc(active.pitch??28)}" data-solid-edit="pitch"><output>${Math.round(active.pitch??28)}°</output></label><label><span>整体缩放</span><input type="range" min="0.6" max="2.2" step="0.1" value="${esc(active.scale)}" data-solid-edit="scale"></label>${def.dims.map(d=>`<label><span>${esc(d.label)}</span><input type="range" min="${d.min}" max="${d.max}" step="${d.step}" value="${active.params[d.key]}" data-solid-param="${d.key}"><small>${active.params[d.key]}</small></label>`).join('')}</div><div class="foot-actions"><button class="btn small secondary" data-solid-duplicate>复制一个</button><button class="btn small warn" data-solid-remove>删除当前</button></div></div>`}
+function solidPreview(type,params,large=false){return `<svg viewBox="0 0 420 280" class="solid-preview ${large?'large':''}" role="img" aria-label="${esc(solidDef(type).name)} 示意图">${solidSvg(type,params,210,150,2)}</svg>`}
+function solidStageSvg(){const S=solidsState();return S.scene.map(item=>`<g class="solid-grabbable ${S.active===item.id?'selected':''}" data-solid-object="${esc(item.id)}"><g data-shape-render>${solidSvg(item.type,item.params,item.x,item.y,item.scale,item)}</g><rect x="${item.x-90*item.scale}" y="${item.y-100*item.scale}" width="${190*item.scale}" height="${205*item.scale}" fill="transparent" pointer-events="all" aria-label="拖动${esc(solidDef(item.type).name)}"/><circle cx="${item.x}" cy="${item.y}" r="3" fill="#fff4c7" opacity="${S.active===item.id?1:0}"/></g>`).join('')}
+function strokeAttrs(fill='#7fb58e'){return `fill="${fill}" fill-opacity="0.18" stroke="#eef8df" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"`}
+function solidSvg(type,p,cx,cy,scale=1){const k=Math.min(2.2,Math.max(.4,Number(scale)||1));return `<g transform="translate(${cx} ${cy}) scale(${k}) translate(${-cx} ${-cy})">${solidSvgRaw(type,p,cx,cy)}</g>`;}
+function solidSvgRaw(type,p,cx,cy){const dash='stroke-dasharray="7 6"';
+  if(type==='cube'){const a=(p.a||6)*9;const d=a*.42;const x1=cx-a/2,y1=cy+a/2,x2=cx+a/2,y2=cy-a/2,bx1=x1+d,by1=y1-d,bx2=x2+d,by2=y2-d;return `<g transform="translate(0 0)"><rect x="${x1}" y="${y2}" width="${a}" height="${a}" ${strokeAttrs('#8acb94')}/><rect x="${bx1}" y="${by2}" width="${a}" height="${a}" ${strokeAttrs('#6aa97a')} ${dash}/><path d="M ${x1} ${y2} L ${bx1} ${by2} L ${bx2} ${by2} L ${x2} ${y2} Z" ${strokeAttrs('#6fb383')}/><line x1="${x2}" y1="${y2}" x2="${bx2}" y2="${by2}" stroke="#eef8df" stroke-width="2.2"/><line x1="${x2}" y1="${y1}" x2="${bx2}" y2="${by1}" stroke="#eef8df" stroke-width="2.2"/><line x1="${x1}" y1="${y1}" x2="${bx1}" y2="${by1}" stroke="#eef8df" stroke-width="2.2" ${dash}/><text x="${x2+10}" y="${y1+18}" class="solid-label">a</text></g>`}
+  if(type==='cuboid'){const w=(p.l||8)*11,h=(p.h||6)*11,dep=(p.w||5)*9;const ox=dep*.55,oy=dep*.38;const x1=cx-w/2,y1=cy+h/2,x2=cx+w/2,y2=cy-h/2,bx1=x1+ox,by1=y1-oy,bx2=x2+ox,by2=y2-oy;return `<g><rect x="${x1}" y="${y2}" width="${w}" height="${h}" ${strokeAttrs('#89c29a')}/><rect x="${bx1}" y="${by2}" width="${w}" height="${h}" ${strokeAttrs('#5a936f')} ${dash}/><path d="M ${x1} ${y2} L ${bx1} ${by2} L ${bx2} ${by2} L ${x2} ${y2} Z" ${strokeAttrs('#6fae88')}/><line x1="${x2}" y1="${y2}" x2="${bx2}" y2="${by2}" stroke="#eef8df" stroke-width="2.2"/><line x1="${x2}" y1="${y1}" x2="${bx2}" y2="${by1}" stroke="#eef8df" stroke-width="2.2"/><line x1="${x1}" y1="${y1}" x2="${bx1}" y2="${by1}" stroke="#eef8df" stroke-width="2.2" ${dash}/><line x1="${cx}" y1="${y2}" x2="${cx}" y2="${y1}" stroke="#def6d9" stroke-width="2" ${dash}/><text x="${cx+8}" y="${y2+(h/2)}" class="solid-label">h</text></g>`}
+  if(type==='pyramid'){const a=(p.a||8)*10,h=(p.h||7)*11;const blx=cx-a/2,bly=cy+45, brx=cx+a/2,bry=cy+45, backLx=blx+38, backLy=bly-26, backRx=brx+38, backRy=bry-26, ax=cx+18, ay=cy-h;return `<g><polygon points="${blx},${bly} ${brx},${bry} ${backRx},${backRy} ${backLx},${backLy}" ${strokeAttrs('#6fb083')}/><line x1="${ax}" y1="${ay}" x2="${blx}" y2="${bly}" stroke="#eef8df" stroke-width="2.2"/><line x1="${ax}" y1="${ay}" x2="${brx}" y2="${bry}" stroke="#eef8df" stroke-width="2.2"/><line x1="${ax}" y1="${ay}" x2="${backLx}" y2="${backLy}" stroke="#eef8df" stroke-width="2.2" ${dash}/><line x1="${ax}" y1="${ay}" x2="${backRx}" y2="${backRy}" stroke="#eef8df" stroke-width="2.2"/><line x1="${cx+18}" y1="${ay}" x2="${cx+18}" y2="${cy+12}" stroke="#def6d9" stroke-width="2" ${dash}/><text x="${cx+28}" y="${(ay+cy+12)/2}" class="solid-label">h</text></g>`}
+  if(type==='cylinder'){const r=(p.r||4.5)*9,h=(p.h||9)*11,ry=r*.35;const topY=cy-h/2,bottomY=cy+h/2;return `<g><ellipse cx="${cx}" cy="${topY}" rx="${r}" ry="${ry}" ${strokeAttrs('#87c6a0')}/><line x1="${cx-r}" y1="${topY}" x2="${cx-r}" y2="${bottomY}" stroke="#eef8df" stroke-width="2.2"/><line x1="${cx+r}" y1="${topY}" x2="${cx+r}" y2="${bottomY}" stroke="#eef8df" stroke-width="2.2"/><path d="M ${cx-r} ${bottomY} A ${r} ${ry} 0 0 0 ${cx+r} ${bottomY}" ${strokeAttrs('#5f9c78')}/><path d="M ${cx-r} ${bottomY} A ${r} ${ry} 0 0 1 ${cx+r} ${bottomY}" fill="none" stroke="#eef8df" stroke-width="2.2" ${dash}/><line x1="${cx}" y1="${topY}" x2="${cx}" y2="${bottomY}" stroke="#def6d9" stroke-width="2" ${dash}/><line x1="${cx}" y1="${topY}" x2="${cx+r}" y2="${topY}" stroke="#def6d9" stroke-width="2" ${dash}/><text x="${cx+10}" y="${(topY+bottomY)/2}" class="solid-label">h</text><text x="${cx+r/2}" y="${topY-8}" class="solid-label">r</text></g>`}
+  if(type==='cone'){const r=(p.r||4.5)*9,h=(p.h||9)*11,ry=r*.35;const apexY=cy-h/2,baseY=cy+h/2;return `<g><path d="M ${cx-r} ${baseY} L ${cx} ${apexY} L ${cx+r} ${baseY}" ${strokeAttrs('#7bb990')}/><path d="M ${cx-r} ${baseY} A ${r} ${ry} 0 0 0 ${cx+r} ${baseY}" fill="none" stroke="#eef8df" stroke-width="2.2"/><path d="M ${cx-r} ${baseY} A ${r} ${ry} 0 0 1 ${cx+r} ${baseY}" fill="none" stroke="#eef8df" stroke-width="2.2" ${dash}/><line x1="${cx}" y1="${apexY}" x2="${cx}" y2="${baseY}" stroke="#def6d9" stroke-width="2" ${dash}/><line x1="${cx}" y1="${baseY}" x2="${cx+r}" y2="${baseY}" stroke="#def6d9" stroke-width="2" ${dash}/><text x="${cx+10}" y="${(apexY+baseY)/2}" class="solid-label">h</text><text x="${cx+r/2}" y="${baseY-10}" class="solid-label">r</text></g>`}
+  if(type==='sphere'){const r=(p.r||5)*12;return `<g><circle cx="${cx}" cy="${cy}" r="${r}" ${strokeAttrs('#82c1a1')}/><ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${r*.35}" fill="none" stroke="#eef8df" stroke-width="2.2"/><path d="M ${cx-r} ${cy} A ${r} ${r*.35} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="#eef8df" stroke-width="2.2" ${dash}/><line x1="${cx}" y1="${cy}" x2="${cx+r}" y2="${cy}" stroke="#def6d9" stroke-width="2" ${dash}/><text x="${cx+r/2}" y="${cy-10}" class="solid-label">r</text></g>`}
+  if(type==='hemisphere'){const r=(p.r||5)*12;const ry=r*.28;const top=cy-r*.95;return `<g><path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" ${strokeAttrs('#86c1a0')}/><path d="M ${cx-r} ${cy} A ${r} ${ry} 0 0 0 ${cx+r} ${cy}" fill="none" stroke="#eef8df" stroke-width="2.2"/><path d="M ${cx-r} ${cy} A ${r} ${ry} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="#eef8df" stroke-width="2.2" ${dash}/><line x1="${cx}" y1="${cy}" x2="${cx+r}" y2="${cy}" stroke="#def6d9" stroke-width="2" ${dash}/><line x1="${cx}" y1="${cy}" x2="${cx}" y2="${top}" stroke="#def6d9" stroke-width="2" ${dash}/><text x="${cx+r/2}" y="${cy-10}" class="solid-label">r</text></g>`}
+  if(type==='triangularPrism'){const b=(p.b||7)*10,h=(p.h||5)*12,L=(p.L||8)*8;const ax=cx-b/2, ay=cy+42, bx=cx+b/2, by=cy+42, tx=cx, ty=cy-h, offx=L*.55, offy=-L*.32;return `<g><polygon points="${ax},${ay} ${bx},${by} ${tx},${ty}" ${strokeAttrs('#80bd8e')}/><polygon points="${ax+offx},${ay+offy} ${bx+offx},${by+offy} ${tx+offx},${ty+offy}" ${strokeAttrs('#5f9d76')} ${dash}/><line x1="${ax}" y1="${ay}" x2="${ax+offx}" y2="${ay+offy}" stroke="#eef8df" stroke-width="2.2"/><line x1="${bx}" y1="${by}" x2="${bx+offx}" y2="${by+offy}" stroke="#eef8df" stroke-width="2.2"/><line x1="${tx}" y1="${ty}" x2="${tx+offx}" y2="${ty+offy}" stroke="#eef8df" stroke-width="2.2"/><line x1="${tx}" y1="${ty}" x2="${tx}" y2="${ay}" stroke="#def6d9" stroke-width="2" ${dash}/><text x="${tx+8}" y="${(ty+ay)/2}" class="solid-label">h</text></g>`}
+  return '';
+}
+let solidPointer=null,solidControlMode='move';
+function solidStageCoords(svg,e){const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const ctm=svg.getScreenCTM();return ctm?pt.matrixTransform(ctm.inverse()):{x:0,y:0}}
+function solidsMount(){solidNetStop();solidNetProgress=1;solidRefreshStage();solidNetSetProgress(1);
+  const svg=$('#solidStage');if(!svg)return;
+  svg.addEventListener('pointerdown',e=>{
+    const node=e.target.closest('[data-solid-object]');if(!node)return;
+    const item=solidsState().scene.find(x=>x.id===node.dataset.solidObject);if(!item)return;
+    e.preventDefault();svg.setPointerCapture(e.pointerId);
+    const start=solidStageCoords(svg,e);
+    solidPointer={id:e.pointerId,object:item.id,originX:item.x,originY:item.y,originYaw:item.yaw??38,originPitch:item.pitch??28,start,group:node,moved:false};
+    solidsState().active=item.id;
+    svg.querySelectorAll('.solid-grabbable').forEach(n=>n.classList.toggle('selected',n===node));
+    node.classList.add('dragging');
+  });
+  svg.addEventListener('pointermove',e=>{
+    if(!solidPointer||solidPointer.id!==e.pointerId)return;
+    e.preventDefault();const pt=solidStageCoords(svg,e),dx=pt.x-solidPointer.start.x,dy=pt.y-solidPointer.start.y;
+    const item=solidsState().scene.find(x=>x.id===solidPointer.object);if(!item)return;
+    if(solidControlMode==='rotate'){
+      item.yaw=Math.round(((solidPointer.originYaw+dx*.7+180)%360+360)%360-180);
+      item.pitch=Math.round(Math.min(85,Math.max(-85,solidPointer.originPitch-dy*.55)));
+      const shape=solidPointer.group.querySelector('[data-shape-render]');if(shape)shape.innerHTML=solidSvg(item.type,item.params,item.x,item.y,item.scale,item);
+    }else{
+      item.x=Math.round(Math.max(40,Math.min(860,solidPointer.originX+dx)));
+      item.y=Math.round(Math.max(50,Math.min(470,solidPointer.originY+dy)));
+    }
+    solidPointer.moved=solidPointer.moved||Math.abs(dx)+Math.abs(dy)>3;
+    const tx=item.x-solidPointer.originX,ty=item.y-solidPointer.originY;
+    if(solidControlMode!=='rotate')solidPointer.group.setAttribute('transform',`translate(${tx} ${ty})`);
+  });
+  function end(e){if(!solidPointer||solidPointer.id!==e.pointerId)return;
+    solidPointer=null;persist();solidRefreshStage();}
+  svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
+}
+function solidRefreshStage(){const c=$('#solidStageContent');if(c)c.innerHTML=solidStageSvg();const S=solidsState();const active=S.scene.find(x=>x.id===S.active)||S.scene[0]||null;const list=$('#solidSceneList');if(list)list.innerHTML=solidSceneList(active);const editor=$('#solidEditor');if(editor)editor.innerHTML=solidEditor(active)}
+function solidAddCurrent(){const S=solidsState();const item={id:id(),type:S.selected,x:190+(S.scene.length%3)*260,y:200+Math.floor((S.scene.length%6)/3)*190,scale:1.65,yaw:38,pitch:28,params:solidDefaultParams(S.selected)};S.scene.push(item);S.active=item.id;persist();solidRefreshStage();toast('已加入组合舞台')}
+function solidFocus(id){const S=solidsState();S.active=id;persist();solidRefreshStage()}
+function solidRemoveActive(){const S=solidsState();if(!S.active)return;S.scene=S.scene.filter(x=>x.id!==S.active);S.active=S.scene[0]?.id||null;persist();solidRefreshStage()}
+function solidDuplicate(){const S=solidsState();const cur=S.scene.find(x=>x.id===S.active);if(!cur)return;const copy=JSON.parse(JSON.stringify(cur));copy.id=id();copy.x=Math.min(840,cur.x+40);copy.y=Math.min(460,cur.y+28);S.scene.push(copy);S.active=copy.id;persist();solidRefreshStage()}
+function solidExportPng(){const svgEl=$('#solidStage');if(!svgEl)return;const xml=new XMLSerializer().serializeToString(svgEl);const blob=new Blob([xml],{type:'image/svg+xml;charset=utf-8'});const url=URL.createObjectURL(blob);const img=new Image();img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=700;const ctx=canvas.getContext('2d');ctx.fillStyle='#0b251f';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='数学雨林-3D立体图-'+today()+'.png';a.click();URL.revokeObjectURL(url)};img.src=url}
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||route.page!=='solids')return;if(b.dataset.solidMode){solidControlMode=b.dataset.solidMode;document.querySelectorAll('[data-solid-mode]').forEach(n=>n.classList.toggle('selected',n.dataset.solidMode===solidControlMode));const out=$('#solidModeNote');if(out)out.textContent=solidControlMode==='rotate'?'当前：滑动旋转视角':'当前：拖动移动';return}if(b.dataset.solidPick){solidNetStop();const S=solidsState();S.selected=b.dataset.solidPick;persist();render();return}if(b.hasAttribute('data-solid-add')){solidAddCurrent();return}if(b.dataset.solidFocus){solidFocus(b.dataset.solidFocus);return}if(b.hasAttribute('data-solid-remove')){solidRemoveActive();return}if(b.hasAttribute('data-solid-duplicate')){solidDuplicate();return}if(b.hasAttribute('data-solid-clear')){const S=solidsState();S.scene=[];S.active=null;persist();solidRefreshStage();return}if(b.hasAttribute('data-solid-export')){solidExportPng();return}});
+document.addEventListener('input',e=>{if(route.page!=='solids')return;const S=solidsState();const cur=S.scene.find(x=>x.id===S.active);if(!cur)return;if(e.target.matches('[data-solid-edit]')){cur[e.target.dataset.solidEdit]=Number(e.target.value);persist();solidRefreshStage()}if(e.target.matches('[data-solid-param]')){cur.params[e.target.dataset.solidParam]=Number(e.target.value);persist();solidRefreshStage()}});
+registerModule({id:'solids', label:'3D立体图', icon:'⬢', render:solidsPage, mount:solidsMount});
