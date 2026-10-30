@@ -1,0 +1,12 @@
+数学雨林 3.3 · GitHub Pages 上传专用版
+
+1. 先在 github.com 建立公开仓库 math-rainforest。
+2. 解压本 ZIP。将解压后看到的 index.html、其它 html、assets 文件夹、modules 文件夹、.nojekyll 和本说明文件一起上传到仓库最外层。
+3. Settings → Pages → Source 选择 Deploy from a branch → Branch: main / (root) → Save。
+4. 访问 https://你的GitHub用户名.github.io/math-rainforest/ 。
+
+重要提醒：
+- 本包不包含只在本机运行的 server.mjs 和 .bat AI 启动脚本。GitHub Pages 只能发布静态网站。
+- 公式秘境的联网 AI 自动研究功能需要另行部署安全后端，不能在 Pages 上直接用。
+- 网站中新增的学习资料、PDF 和公式默认保存在每个浏览器，不会自动共享给其他学生；如需全校共享资料，需要另加云存储。
+- 不要把 API 密钥、私人学生数据上传到公开仓库。

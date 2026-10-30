@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b2520">
+  <meta name="description" content="数学雨林 — 离线可用的模块化数学学习网站">
+  <title>数学雨林 · 模块化学习网站</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/tools.css">
+  <link rel="stylesheet" href="assets/css/rainforest-vibrant.css">
+  <link rel="stylesheet" href="assets/css/classroom33.css">
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="mobile-head"><strong>🌿 数学雨林</strong><div class="mobile-menu" id="mobileNav"></div></div>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-icon">∑</div><div><h1>数学雨林</h1><small>Math Rainforest</small></div></div>
+    <div class="side-label">探索导航 / EXPLORE</div>
+    <nav id="desktopNav" aria-label="网站导航"></nav>
+    <div class="side-bottom"><div class="note-box"><span class="mini">🌱</span><b>知识会生根，思考会发芽。</b><p>把数学当作一场探索。每解开一个问题，都能看见新的风景。</p></div><div class="side-foot">✦ 本地离线网站 · 无须账号<br>你的学习内容存放在此浏览器</div></div>
+  </aside>
+  <main class="shell">
+    <header class="topbar"><div class="bread">你的学习天地 <span> / </span> <em id="breadcrumb">雨林入口</em></div><div class="top-right"><label class="search-wrap"><span aria-hidden="true">⌕</span><input id="globalSearch" type="search" placeholder="搜索资料、练习、知识点..." aria-label="搜索学习资料"/><span class="kbd">⌕</span></label><button class="top-btn" id="quickAdd">＋ 新增资料</button><div class="profile" title="我的学习雨林">∑</div></div></header>
+    <div id="view" class="page"></div>
+    <footer class="footline">数学雨林 · Math Rainforest　|　探索 · 理解 · 记忆 · 成长<br>模块化离线网站 · 含函数分析、科学计算器与 3D 立体图形 · 请定期到「管理中心」导出备份。</footer>
+  </main>
+</div>
+<div id="modalHost"></div><div id="toastHost" aria-live="polite"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/math.js"></script>
+<script src="assets/js/forest-friends.js"></script>
+<script src="modules/home.js"></script>
+<script src="modules/grades.js"></script>
+<script src="modules/flashcards.js"></script>
+<script src="modules/formulas.js"></script>
+<script src="modules/graph.js"></script>
+<script src="modules/solids-nets.js"></script>
+<script src="modules/solids.js"></script>
+<script src="modules/solids-3d.js"></script>
+<script src="modules/solids-netfold.js"></script>
+<script src="modules/calculator.js"></script>
+<script src="modules/saved.js"></script>
+<script src="modules/manage.js"></script>
+<script src="modules/search.js"></script>
+<script src="assets/js/bootstrap.js"></script>
+</body>
+</html>
